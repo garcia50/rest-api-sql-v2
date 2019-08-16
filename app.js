@@ -2,7 +2,6 @@
 // load modules and set dependencies 
 const express = require('express');
 const morgan = require('morgan');
-const { sequelize, models } = require('./db/models');
 const routes = require('./routes');
 const usersRoute = require('./routes/users')
 const coursesRoute = require('./routes/courses')
@@ -13,21 +12,17 @@ const enableGlobalErrorLogging = process.env.ENABLE_GLOBAL_ERROR_LOGGING === 'tr
 // create the Express app
 const app = express();
 
+app.use(express.json());
+app.use(express.urlencoded());
+
 // setup morgan which gives us http request logging
 app.use(morgan('dev'));
 
 // TODO setup your api routes here
-app.use('/api', routes);
+app.use('/', routes);
 app.use('/api/users', usersRoute);
 app.use('/api/courses', coursesRoute);
 
-sequelize
-  .authenticate()
-  .then(() => {
-    console.log('Synchronizing the models with the database...');
-
-    return sequelize.sync();
-  })
 
 // send 404 if no other route matched
 app.use((req, res) => {
@@ -44,7 +39,8 @@ app.use((err, req, res, next) => {
 
   res.status(err.status || 500).json({
     message: err.message,
-    error: {},
+    // error: process.env.NODE_ENV === 'production' ? {} : err,
+    error: {}
   });
 });
 
@@ -55,6 +51,5 @@ app.set('port', process.env.PORT || 5000);
 const server = app.listen(app.get('port'), () => {
   console.log(`Express server is listening on port ${server.address().port}`);
 });
-
 
 
