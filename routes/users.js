@@ -1,39 +1,9 @@
 const express = require('express');
-const bcryptjs = require('bcryptjs');
-const auth = require('basic-auth');
 const router = express.Router();
-const { User } = require('../db/models');
+const bcryptjs = require('bcryptjs');
 const { check, validationResult } = require('express-validator');
-
-const authenticateUser = (req, res, next) => {
-  let message = null;
-  // Parse the user's credentials from the Authorization header.
-  const credentials = auth(req);
-  if (credentials) {
-    User.findOne({ where: {emailAddress: credentials.name} })
-    .then((user) => {
-      if (user) {
-        const authenticated = bcryptjs
-        .compareSync(credentials.pass, user.password);
-        if (authenticated) {
-          console.log(`Authentication successful for username: ${user.firstName} ${user.lastName}`);
-          req.currentUser = user;
-          next();
-        } else {
-          message = `Authentication failure for username: ${user.emailAddress}`;
-          res.status(401).json({ message: message });
-        }
-      } else {
-        message = 'Please enter user credentials';
-        res.status(401).json({ message: message });
-      }
-    });
-  } else {
-    message = 'Auth header not found';
-    res.status(401).json({ message: message });
-  }
-}
-
+const authenticateUser = require('./authenticate');
+const { User } = require('../db/models');
 
 function asyncHandler(cb) {
   return async (req, res, next) => {
@@ -45,14 +15,15 @@ function asyncHandler(cb) {
   }
 }
 
-
-router.get('/', authenticateUser, (req, res) => {
-  const user = req.currentUser;
-  res.status(200).json({
-    name: user.firstName,
-    username: user.emailAddress
-  });
-});
+router.get('/', authenticateUser, 
+  asyncHandler( async (req, res) => {
+    const user = req.currentUser;
+    res.status(200).json({
+      name: user.firstName,
+      username: user.emailAddress
+    });
+  })
+);
 
 
 router.post('/', [
@@ -80,16 +51,12 @@ router.post('/', [
       const errorMessages = errors.array().map(error => error.msg);
       // Return the validation errors to the client.
       return res.status(400).json({ errors: errorMessages });
-
     } else if (req.body.firstName && req.body.lastName 
         && req.body.emailAddress && req.body.password) {
 
       req.body.password = bcryptjs.hashSync(req.body.password);
-      
       const user = await User.create(req.body);
-
       res.location('/').status(201).json(user);
-
     } else {
       res.status(400).json({message: "First name, last name, email address, password is required."});
     }
@@ -97,10 +64,6 @@ router.post('/', [
 );
 
 
-
 module.exports = router;
-
-
-
 
 
