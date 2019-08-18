@@ -31,7 +31,7 @@ router.get('/:id', asyncHandler( async (req, res) => {
   Course.findByPk(id)
   .then(function(course){
     if(course == null) {
-      res.render('page_not_found');
+      return res.status(400).json({ errors: 'That course does not exist' });
     } else {
       res.status(200).json(course)
     }
@@ -47,11 +47,7 @@ router.post('/', [
     .exists()
     .withMessage('Please provide a value for "Description"')
   ],
-
   asyncHandler( async (req, res) => {
-    // await sequelize.authenticate();
-    // await sequelize.sync({ force: true });
-
     // Attempt to get the validation result from the Request object.
     const errors = validationResult(req);
 
@@ -73,6 +69,40 @@ router.post('/', [
 );
 
 
+router.put('/:id', [
+  check('title')
+    .exists()
+    .withMessage('Please provide a value for "Title"'),
+  check('description')
+    .exists()
+    .withMessage('Please provide a value for "Description"')
+  ],
+  asyncHandler( async (req, res) => {
+    // Attempt to get the validation result from the Request object.
+    const errors = validationResult(req);
+
+    // If there are validation errors...
+    if (!errors.isEmpty()) {
+      // Use the Array `map()` method to get a list of error messages.
+      const errorMessages = errors.array().map(error => error.msg);
+      // Return the validation errors to the client.
+      return res.status(400).json({ errors: errorMessages });
+    } else if (req.body.title && req.body.description) {
+      const { id } = req.params;
+      Course.findByPk(id)
+      .then(function(course){
+        if(course == null) {
+          return res.status(400).json({ errors: 'That course does not exist' });
+        } else {
+          course.update(req.body)
+          .then(
+            res.status(204).json(course)
+          )
+        }
+      });
+    }
+  })
+);
 
 
 // {
