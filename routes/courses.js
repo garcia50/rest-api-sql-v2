@@ -120,7 +120,7 @@ router.delete('/:id', authenticateUser,
     })
     //catches any error
     .catch(function(err) {
-      res.sendStatus(500);
+      res.sendStatus(400);
     })
   })
 );
