@@ -1,4 +1,5 @@
 'use strict'
+//Set dependencies and add them to variables, and acquire our models 
 const { User } = require('../db/models');
 const auth = require('basic-auth');
 const bcryptjs = require('bcryptjs');
@@ -7,7 +8,6 @@ const bcryptjs = require('bcryptjs');
   let message = null;
   // Parse the user's credentials from the Authorization header.
   const credentials = auth(req);
-  console.log('credeeeeeenttttiialllalaassss', credentials);
   // If the user's credentials are available...
   if (credentials) {
     // Attempt to retrieve the user from the data store

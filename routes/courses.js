@@ -1,3 +1,5 @@
+'use strict'
+//Set dependencies and add them to variables, and acquire our models 
 const express = require('express');
 const router  = express.Router();
 const { check, validationResult } = require('express-validator');
@@ -5,7 +7,7 @@ const { Course } = require('../db/models');
 const authenticateUser = require('./authenticate');
 const { sequelize } = require('../db/models');
 
-
+/* Middleware function to clean up code */
 function asyncHandler(cb) {
   return async (req, res, next) => {
     try {
@@ -16,16 +18,16 @@ function asyncHandler(cb) {
   }
 }
 
-
+/* Retrieves all courses */
 router.get('/', asyncHandler( async (req, res) => {
   console.log('woooorokrokrokrrk');
   Course.findAll()
   .then(function(courses) {
-    res.status(200).json(courses)
+    res.status(200).json(courses).end()
   });
 }));
 
-
+/* Retrieves a course */
 router.get('/:id', asyncHandler( async (req, res) => {
   const { id } = req.params;
   Course.findByPk(id)
@@ -33,13 +35,14 @@ router.get('/:id', asyncHandler( async (req, res) => {
     if(course == null) {
       return res.status(400).json({ errors: 'That course does not exist' });
     } else {
-      res.status(200).json(course)
+      res.status(200).json(course).end()
     }
   });
 }));
 
-
-router.post('/', [
+/* Creates course */
+router.post('/', authenticateUser, [
+  //Ensure title and decription is present in request
   check('title')
     .exists()
     .withMessage('Please provide a value for "Title"'),
@@ -60,7 +63,7 @@ router.post('/', [
     } else if (req.body.title && req.body.description) {
       const course = await Course.create(req.body) 
       // .then(function(course) {
-        res.location(`/api/courses/${course.id}`).status(201).json(course);
+        res.location(`/api/courses/${course.id}`).status(201).json(course).end();
       // })
     } else {
       res.status(400).json({message: "Title and description is required."});
@@ -68,8 +71,8 @@ router.post('/', [
   })
 );
 
-
-router.put('/:id', [
+/* Updates course */
+router.put('/:id', authenticateUser, [
   check('title')
     .exists()
     .withMessage('Please provide a value for "Title"'),
@@ -96,7 +99,7 @@ router.put('/:id', [
         } else {
           course.update(req.body)
           .then(
-            res.status(204).json(course)
+            res.status(204).json(course).end()
           )
         }
       });
@@ -105,17 +108,23 @@ router.put('/:id', [
 );
 
 
-// {
-//   "userId": 15,
-//   "title": "sports1",
-//   "description": "swim"
-// }
+/* Delete course */
+router.delete('/:id', authenticateUser, 
+  asyncHandler( async (req, res) => {
+    Course.findByPk(req.params.id)
+    .then(function(course) {
+      if (course) {
+        course.destroy();
+        res.status(204).end();
+      }
+    })
+    //catches any error
+    .catch(function(err) {
+      res.sendStatus(500);
+    })
+  })
+);
 
-// {
-//   "firstName": "Tony",
-//   "lastName": "Starks",
-//   "emailAddress": "tony@aol.com",
-//   "password": "ironman"
-// }
 
+//Expose router as a module
 module.exports = router;

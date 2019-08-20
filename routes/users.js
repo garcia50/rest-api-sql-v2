@@ -1,3 +1,5 @@
+'use strict'
+//Set dependencies and add them to variables, and acquire our models 
 const express = require('express');
 const router = express.Router();
 const bcryptjs = require('bcryptjs');
@@ -5,6 +7,7 @@ const { check, validationResult } = require('express-validator');
 const authenticateUser = require('./authenticate');
 const { User } = require('../db/models');
 
+/* Middleware function to clean up code */
 function asyncHandler(cb) {
   return async (req, res, next) => {
     try {
@@ -15,6 +18,7 @@ function asyncHandler(cb) {
   }
 }
 
+/* Retrieves all users */
 router.get('/', authenticateUser, 
   asyncHandler( async (req, res) => {
     const user = req.currentUser;
@@ -25,8 +29,9 @@ router.get('/', authenticateUser,
   })
 );
 
-
+/* Creates user */
 router.post('/', [
+  //Ensure name, email and password are present in request
   check('firstName')
     .exists()
     .withMessage('Please provide a value for "First Name"'),
@@ -44,7 +49,6 @@ router.post('/', [
   asyncHandler( async (req, res) => {
     // Attempt to get the validation result from the Request object.
     const errors = validationResult(req);
-
     // If there are validation errors...
     if (!errors.isEmpty()) {
       // Use the Array `map()` method to get a list of error messages.
@@ -57,13 +61,12 @@ router.post('/', [
       req.body.password = bcryptjs.hashSync(req.body.password);
       const user = await User.create(req.body);
       res.location('/').status(201).json(user);
+
     } else {
       res.status(400).json({message: "First name, last name, email address, password is required."});
     }
   })
 );
 
-
+//Expose router as a module
 module.exports = router;
-
-
