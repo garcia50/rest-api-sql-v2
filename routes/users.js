@@ -23,6 +23,7 @@ router.get('/', authenticateUser,
   asyncHandler( async (req, res) => {
     const user = req.currentUser;
     res.status(200).json({
+      userId: user.id,
       name: user.firstName,
       username: user.emailAddress
     });
@@ -60,7 +61,7 @@ router.post('/', [
 
       req.body.password = bcryptjs.hashSync(req.body.password);
       const user = await User.create(req.body);
-      res.location('/').status(201).json(user);
+      res.location('/').status(201);
 
     } else {
       res.status(400).json({message: "First name, last name, email address, password is required."});
